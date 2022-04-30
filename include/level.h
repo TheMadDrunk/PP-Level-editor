@@ -28,7 +28,7 @@ public:
     Level(std::string level_path, std::string tileset_path);
     void LoadLevel(std::string path = "");
     void SaveLevel(std::string path);
-    void DrawLevel();
+    void DrawLevel(Camera2D camera);
     void setTileSet(std::string path);
 };
 
@@ -36,12 +36,13 @@ Level::Level(std::string level_path, std::string tileset_path)
 {
     this->level_path = level_path;
     this->tileset_path = tileset_path;
+
 }
 
 void Level::parse_level()
 {
     std::string token;
-    bool debug = true;
+    bool debug = false;
 
     level_file >> token;
     if (debug)
@@ -94,7 +95,7 @@ void Level::parse_level()
             {
                 level_file >> token;
                 if(nbr_layers == 0)
-                    matrix[k][j][i] = -1;
+                    matrix[k][j][i] = 26;
                 else
                     matrix[k][j][i] = stoi(token);
             }
@@ -102,7 +103,7 @@ void Level::parse_level()
     }
 }
 
-void Level::LoadLevel(std::string path = "")
+void Level::LoadLevel(std::string path)
 {
     if (path.length() > 0)
     {
@@ -120,6 +121,8 @@ void Level::LoadLevel(std::string path = "")
     // std::cout<<"unable to load level, damaged file\n";
 
     level_file.close();
+
+    this->setTileSet(this->tileset_path);
 }
 
 void Level::SaveLevel(std::string path)
@@ -154,23 +157,25 @@ void Level::setTileSet(std::string path)
     tileset = LoadTexture(path.c_str());
 }
 
-void Level::DrawLevel()
+void Level::DrawLevel(Camera2D camera)
 {
     int n = width / tile_size, m = height / tile_size;
-    int n_row_tiles = tileset.width / tile_size;
+    int n_col_tiles = tileset.width / tile_size;
     int ti, tj;
-    for (int k = 0; k < nbr_layers; k++)
+    BeginMode2D(camera);
+    for (int k = 0; k < 5; k++)
     {
         for (int j = 0; j < m; j++)
         {
             for (int i = 0; i < n; i++)
             {
-                tj = matrix[k][j][i] / n_row_tiles;
-                ti = matrix[k][j][i] % n_row_tiles;
-                DrawTextureRec(tileset, (Rectangle){ti * n_row_tiles, tj * n_row_tiles, tile_size, tile_size}, (Vector2){320 + i * tile_size, j * tile_size}, WHITE);
+                tj = matrix[k][j][i] / n_col_tiles;
+                ti = matrix[k][j][i] % n_col_tiles;
+                DrawTextureRec(tileset, (Rectangle){ti * n_col_tiles, tj * n_col_tiles, tile_size, tile_size}, (Vector2){i*tile_size,j*tile_size}, WHITE);
             }
         }
     }
+    EndMode2D();
 }
 
-#endif
+#endif //LEVEL

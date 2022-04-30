@@ -8,6 +8,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
+#include "level.h";
 
 #define S_WIDTH 1080
 #define S_HEIGHT 720
@@ -28,8 +29,8 @@ int main(){
     gui_rec.push_back((Rectangle){200,10,100,40});int textbox_level = 2; //textbox to load level
     gui_rec.push_back((Rectangle){310,10,70,40});int button_level = 3; //btn to load level
 
-    gui_rec.push_back((Rectangle){500,10,100,40});int spinner_tileset = 4;
-    gui_rec.push_back((Rectangle){700,10,100,40});int spinner_level = 5;
+    gui_rec.push_back((Rectangle){500,10,100,40});int spinner_tileset = 4;//spinner zoom tileset
+    gui_rec.push_back((Rectangle){700,10,100,40});int spinner_level = 5;//spinner zoom level
 
     char* Tileset_path = new char[100];
     strcpy(Tileset_path,"Tileset path");
@@ -38,11 +39,19 @@ int main(){
     Texture TileSet = LoadTexture("tileset.png");
 
     std::fstream level;
+    Level level_to_edit = Level("level1.txt","tileset.png");
+    level_to_edit.LoadLevel();
 
-    Rectangle TileSet_view = (Rectangle){10,60,350,600};
+    Rectangle TileSet_view = (Rectangle){10,60,350,640};
+    Rectangle Level_view = (Rectangle){370,60,700,640};
 
     Vector2 level_pos = (Vector2){0};
-    int level_scale=1;
+    int level_scale = 1;
+    Camera2D level_camera;
+    level_camera.offset = (Vector2){Level_view.x,Level_view.y};
+    level_camera.target = (Vector2){0,0};
+    level_camera.zoom = 1;
+    level_camera.rotation = 0;
 
     Vector2 tileset_pos = (Vector2){TileSet_view.x,TileSet_view.y};
     int tileset_scale=1;
@@ -55,6 +64,10 @@ int main(){
         if(IsKeyDown(KEY_S))tileset_pos.y+=6;
         if(IsKeyDown(KEY_W))tileset_pos.y-=6;
 
+        if(IsKeyDown(KEY_UP))level_camera.offset.y-=6;
+        if(IsKeyDown(KEY_DOWN))level_camera.offset.y+=6;
+        if(IsKeyDown(KEY_LEFT))level_camera.offset.x-=6;
+        if(IsKeyDown(KEY_RIGHT))level_camera.offset.x+=6;
 
         BeginDrawing();
 
@@ -78,14 +91,20 @@ int main(){
             TileSet = LoadTexture(Level_path);
         }
 
-        GuiSpinner(gui_rec[spinner_tileset],"zoom tileset",&tileset_scale,1,4,focused==spinner_tileset);
-        GuiSpinner(gui_rec[spinner_level],"zoom level",&level_scale,1,4,focused==spinner_level);
+        GuiSpinner(gui_rec[spinner_tileset],"zoom tileset",&tileset_scale,1,20,focused==spinner_tileset);
+        GuiSpinner(gui_rec[spinner_level],"zoom level",&level_scale,1,20,focused==spinner_level);
+        level_camera.zoom = (int)level_scale;
 
         BeginScissorMode(TileSet_view.x,TileSet_view.y,TileSet_view.width,TileSet_view.height);
 
         ClearBackground(LIGHTGRAY);
         DrawTextureEx(TileSet,tileset_pos,0,tileset_scale,WHITE);
 
+        EndScissorMode();
+
+        BeginScissorMode(Level_view.x,Level_view.y,Level_view.width,Level_view.height);
+        ClearBackground(BLACK);
+        level_to_edit.DrawLevel(level_camera);
         EndScissorMode();
 
         EndDrawing();
@@ -95,6 +114,8 @@ int main(){
 
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
+
+    delete[] Tileset_path,Level_path;
 
     return 0;
     

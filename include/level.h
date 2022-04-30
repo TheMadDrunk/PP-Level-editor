@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iostream>
 
+#define MAX_LAYERS 5
+
 class Level
 {
 private:
@@ -23,21 +25,25 @@ private:
     inline void parse_level();
 
 public:
-    std::vector<std::vector<int>> matrix[5];
+    std::vector<std::vector<int>> matrix[MAX_LAYERS];
 
     Level(std::string level_path, std::string tileset_path);
+    Level();
     void LoadLevel(std::string path = "");
-    void SaveLevel(std::string path);
+    void SaveLevel(std::string path = "");
     void DrawLevel(Camera2D camera);
     void setTileSet(std::string path);
+    int getTileSize();
+    Texture getTileSet();
 };
 
 Level::Level(std::string level_path, std::string tileset_path)
 {
     this->level_path = level_path;
     this->tileset_path = tileset_path;
-
 }
+
+Level::Level(){}
 
 void Level::parse_level()
 {
@@ -81,11 +87,11 @@ void Level::parse_level()
 
     int n = width / tile_size, m = height / tile_size;
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < MAX_LAYERS; i++)
         matrix[i].clear();
 
 
-    for (int k = 0; k < 5; k++)
+    for (int k = 0; k < MAX_LAYERS; k++)
     {
         matrix[k].resize(m);
         for (int j = 0; j < m; j++)
@@ -95,7 +101,7 @@ void Level::parse_level()
             {
                 level_file >> token;
                 if(nbr_layers == 0)
-                    matrix[k][j][i] = 26;
+                    matrix[k][j][i] = 0;
                 else
                     matrix[k][j][i] = stoi(token);
             }
@@ -126,26 +132,30 @@ void Level::LoadLevel(std::string path)
 }
 
 void Level::SaveLevel(std::string path)
-{
+{   
+    if(path.length()==0)path = level_path;
+
     level_file.open(path, std::ios::out | std::ios::trunc);
 
+    level_file << tileset_path <<'\n';
     level_file << width << '\n';
     level_file << height << '\n';
     level_file << tile_size << '\n';
-    level_file << nbr_layers << '\n';
+    level_file << MAX_LAYERS << '\n';
     level_file << player_pos.x << '\n';
     level_file << player_pos.y << '\n';
 
     int n = width / tile_size, m = height / tile_size;
 
-    for (int k = 0; k < nbr_layers; k++)
+    for (int k = 0; k < MAX_LAYERS; k++)
     {
         for (int j = 0; j < m; j++)
         {
             for (int i = 0; i < n; i++)
             {
-                level_file << matrix[k][j][i];
+                level_file << matrix[k][j][i]<<' ';
             }
+            level_file << '\n';
         }
     }
 
@@ -157,13 +167,21 @@ void Level::setTileSet(std::string path)
     tileset = LoadTexture(path.c_str());
 }
 
+int Level::getTileSize(){
+    return tile_size;
+}
+
+Texture Level::getTileSet(){
+    return tileset;
+}
+
 void Level::DrawLevel(Camera2D camera)
 {
     int n = width / tile_size, m = height / tile_size;
     int n_col_tiles = tileset.width / tile_size;
     int ti, tj;
     BeginMode2D(camera);
-    for (int k = 0; k < 5; k++)
+    for (int k = 0; k < MAX_LAYERS; k++)
     {
         for (int j = 0; j < m; j++)
         {
@@ -171,7 +189,7 @@ void Level::DrawLevel(Camera2D camera)
             {
                 tj = matrix[k][j][i] / n_col_tiles;
                 ti = matrix[k][j][i] % n_col_tiles;
-                DrawTextureRec(tileset, (Rectangle){ti * n_col_tiles, tj * n_col_tiles, tile_size, tile_size}, (Vector2){i*tile_size,j*tile_size}, WHITE);
+                DrawTextureRec(tileset, (Rectangle){ti * tile_size, tj * tile_size, tile_size, tile_size}, (Vector2){i*tile_size,j*tile_size}, WHITE);
             }
         }
     }

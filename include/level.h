@@ -14,7 +14,6 @@ private:
     std::string tileset_path;
     std::string level_path;
 
-    int width, height;
     int tile_size;
     int nbr_layers;
     Vector2 player_pos;
@@ -25,6 +24,7 @@ private:
     inline void parse_level();
 
 public:
+    int width, height;
     std::vector<std::vector<int>> matrix[MAX_LAYERS];
 
     Level(std::string level_path, std::string tileset_path);
